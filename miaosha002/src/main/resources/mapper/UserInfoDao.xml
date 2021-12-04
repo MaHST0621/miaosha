@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.miaosha.miaosha002.dao.UserInfoDao">
+
+    <resultMap type="com.example.miaosha.miaosha002.entity.UserInfo" id="UserInfoMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="gender" column="gender" jdbcType="INTEGER"/>
+        <result property="age" column="age" jdbcType="INTEGER"/>
+        <result property="telephone" column="telephone" jdbcType="VARCHAR"/>
+        <result property="registerMod" column="register_mod" jdbcType="VARCHAR"/>
+        <result property="thirdPartyId" column="third_party_id" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--查询单个-->
+    <select id="queryById" resultMap="UserInfoMap">
+        select
+          id, name, gender, age, telephone, register_mod, third_party_id
+        from user_info
+        where id = #{id}
+    </select>
+
+    <!--查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="UserInfoMap">
+        select
+          id, name, gender, age, telephone, register_mod, third_party_id
+        from user_info
+        <where>
+            <if test="id != null">
+                and id = #{id}
+            </if>
+            <if test="name != null and name != ''">
+                and name = #{name}
+            </if>
+            <if test="gender != null">
+                and gender = #{gender}
+            </if>
+            <if test="age != null">
+                and age = #{age}
+            </if>
+            <if test="telephone != null and telephone != ''">
+                and telephone = #{telephone}
+            </if>
+            <if test="registerMod != null and registerMod != ''">
+                and register_mod = #{registerMod}
+            </if>
+            <if test="thirdPartyId != null and thirdPartyId != ''">
+                and third_party_id = #{thirdPartyId}
+            </if>
+        </where>
+    </select>
+
+    <!--统计总行数-->
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from user_info
+        <where>
+            <if test="id != null">
+                and id = #{id}
+            </if>
+            <if test="name != null and name != ''">
+                and name = #{name}
+            </if>
+            <if test="gender != null">
+                and gender = #{gender}
+            </if>
+            <if test="age != null">
+                and age = #{age}
+            </if>
+            <if test="telephone != null and telephone != ''">
+                and telephone = #{telephone}
+            </if>
+            <if test="registerMod != null and registerMod != ''">
+                and register_mod = #{registerMod}
+            </if>
+            <if test="thirdPartyId != null and thirdPartyId != ''">
+                and third_party_id = #{thirdPartyId}
+            </if>
+        </where>
+    </select>
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into user_info(name, gender, age, telephone, register_mod, third_party_id)
+        values (#{name}, #{gender}, #{age}, #{telephone}, #{registerMod}, #{thirdPartyId})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into user_info(name, gender, age, telephone, register_mod, third_party_id)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+        (#{entity.name}, #{entity.gender}, #{entity.age}, #{entity.telephone}, #{entity.registerMod}, #{entity.thirdPartyId})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="id" useGeneratedKeys="true">
+        insert into user_info(name, gender, age, telephone, register_mod, third_party_id)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.name}, #{entity.gender}, #{entity.age}, #{entity.telephone}, #{entity.registerMod}, #{entity.thirdPartyId})
+        </foreach>
+        on duplicate key update
+        name = values(name),
+        gender = values(gender),
+        age = values(age),
+        telephone = values(telephone),
+        register_mod = values(register_mod),
+        third_party_id = values(third_party_id)
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="update">
+        update user_info
+        <set>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="gender != null">
+                gender = #{gender},
+            </if>
+            <if test="age != null">
+                age = #{age},
+            </if>
+            <if test="telephone != null and telephone != ''">
+                telephone = #{telephone},
+            </if>
+            <if test="registerMod != null and registerMod != ''">
+                register_mod = #{registerMod},
+            </if>
+            <if test="thirdPartyId != null and thirdPartyId != ''">
+                third_party_id = #{thirdPartyId},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from user_info where id = #{id}
+    </delete>
+
+</mapper>
+

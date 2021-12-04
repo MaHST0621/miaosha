@@ -1,6 +1,5 @@
 package com.example.miaosha.miaosha001.controller;
 
-
 import com.example.miaosha.miaosha001.entity.User;
 import com.example.miaosha.miaosha001.service.UserService;
 import org.springframework.data.domain.Page;
@@ -44,7 +43,7 @@ public class UserController {
      * @return 单条数据
      */
     @GetMapping("{id}")
-    public ResponseEntity<User> queryById(@PathVariable("id") Long id) {
+    public ResponseEntity<User> queryById(@PathVariable("id")Long id) {
         return ResponseEntity.ok(this.userService.queryById(id));
     }
 

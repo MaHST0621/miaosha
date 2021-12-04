@@ -9,6 +9,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <modules>
         <module>miaosha001</module>
+        <module>miaosha002</module>
     </modules>
     <name>parent</name>
     <parent>
@@ -39,6 +40,11 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
 
