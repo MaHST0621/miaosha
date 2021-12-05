@@ -24,7 +24,6 @@ import java.util.Random;
 @RestController
 @RequestMapping("/user")
 @CrossOrigin(allowCredentials = "true",allowedHeaders = "*")
-//todo : 添加token 和 redis模块
 public class UserController extends BaseController  {
 
     @Autowired
