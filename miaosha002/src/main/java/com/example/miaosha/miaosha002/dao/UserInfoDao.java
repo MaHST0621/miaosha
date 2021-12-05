@@ -79,5 +79,12 @@ public interface UserInfoDao {
      */
     int deleteById(Integer id);
 
+    /**
+     * 通过手机号返回用户
+     *
+     * @param telphone
+     * @return
+     */
+    UserInfo queryByTelphone(String telphone);
 }
 

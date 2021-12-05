@@ -8,6 +8,7 @@ public enum EnumBusinessErr implements CommonError{
 
     //业务相关的错误类型 2xxxx开头
     USER_NOT_EXIST(20001,"用户不存在"),
+    USER_LOGIN_ERROR(20001,"用户手机号或密码错误"),
     ;
 
     private EnumBusinessErr(int errorCode,String errorMessage) {

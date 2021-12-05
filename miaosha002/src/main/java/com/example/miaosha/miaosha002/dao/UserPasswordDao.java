@@ -20,7 +20,7 @@ public interface UserPasswordDao {
      * @param id 主键
      * @return 实例对象
      */
-    UserPassword queryById(Integer id);
+    UserPassword queryByUserId(Integer id);
 
     /**
      * 查询指定行数据

@@ -13,12 +13,21 @@
     </resultMap>
 
     <!--查询单个-->
-    <select id="queryById" resultMap="UserInfoMap">
+    <select id="queryById" resultMap="UserInfoMap" >
         select
           id, name, gender, age, telephone, register_mod, third_party_id
         from user_info
         where id = #{id}
     </select>
+
+    <!--查询单个-->
+    <select id="queryByTelphone" resultMap="UserInfoMap">
+        select
+            id, name, gender, age, telephone, register_mod, third_party_id
+        from user_info
+        where telephone = #{telphone}
+    </select>
+
 
     <!--查询指定行数据-->
     <select id="queryAllByLimit" resultMap="UserInfoMap">

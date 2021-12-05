@@ -11,6 +11,7 @@ import com.example.miaosha.miaosha002.service.UserService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +29,7 @@ public class UserServiceImpl implements UserService {
         if (userInfo == null) {
             return null;
         }
-        UserPassword userPassword = userPasswordDao.queryById(id);
+        UserPassword userPassword = userPasswordDao.queryByUserId(id);
         return convertFromDataObject(userInfo,userPassword);
     }
 
@@ -39,25 +40,47 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(EnumBusinessErr.PARAMETER_VALIDATION_ERROR);
         }
 
-        if (StringUtils.isNotEmpty(userModel.getName())
+        if (!StringUtils.isNotEmpty(userModel.getName())
                 || userModel.getAge() == null
                 || userModel.getGender() == null
-                || StringUtils.isNotEmpty(userModel.getTelephone())) {
+                || !StringUtils.isNotEmpty(userModel.getTelephone())) {
             throw new BusinessException(EnumBusinessErr.PARAMETER_VALIDATION_ERROR,"用户基本信息务必要填");
         }
 
         UserInfo userInfo = convertFromUserModel(userModel);
-        userInfoDao.insert(userInfo);
+        try {
+            userInfoDao.insert(userInfo);
+        }catch (DuplicateKeyException exception) {
+            throw new BusinessException(EnumBusinessErr.PARAMETER_VALIDATION_ERROR,"手机号重复被注册");
+        }
+        userModel.setId(userInfo.getId());
         UserPassword userPassword = convertToUserPassword(userModel);
         userPasswordDao.insert(userPassword);
-
     }
+
+    @Override
+    public UserModel validateLogin(String telphone, String encrptPassword) throws BusinessException {
+        UserInfo userInfo = userInfoDao.queryByTelphone(telphone);
+        if (userInfo == null) {
+            throw new BusinessException(EnumBusinessErr.USER_LOGIN_ERROR);
+        }
+        UserPassword userPassword = userPasswordDao.queryByUserId(userInfo.getId());
+
+        //验证密码的正确性
+        if (!StringUtils.equals(encrptPassword,userPassword.getEncrptPassword())) {
+            throw new BusinessException(EnumBusinessErr.USER_LOGIN_ERROR);
+        }
+
+        return convertFromDataObject(userInfo,userPassword);
+    }
+
     private UserPassword convertToUserPassword(UserModel userModel) {
         if (userModel == null) {
             return null;
         }
         UserPassword userPassword = new UserPassword();
-        BeanUtils.copyProperties(userModel,userPassword);
+        userPassword.setEncrptPassword(userModel.getEncryptpassword());
+        userPassword.setUserId(userModel.getId());
         return userPassword;
     }
 

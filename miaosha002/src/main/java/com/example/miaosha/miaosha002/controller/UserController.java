@@ -15,31 +15,33 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Random;
 
 
 @RestController
 @RequestMapping("/user")
-@CrossOrigin
-public class UserController extends BaseController {
+@CrossOrigin(allowCredentials = "true",allowedHeaders = "*")
+public class UserController extends BaseController  {
 
     @Autowired
     UserService userService;
     @Autowired
     HttpServletRequest httpServletRequest;
 
-    @PostMapping(value = "/rigist",consumes = {CONTEXT_TYPE_FORWORDS})
+    @PostMapping(value = "/rigist" , consumes = CONTEXT_TYPE_FORWORDS)
     @ResponseBody
     public CommonReturnType register(@RequestParam(name="telphone") String telphone,
                                      @RequestParam(name="name") String name,
                                      @RequestParam(name="age") Integer age,
                                      @RequestParam(name="gender") Integer gender,
                                      @RequestParam(name="otpcode") String otpCode,
-                                     @RequestParam(name="password") String password) throws BusinessException {
+                                     @RequestParam(name="password") String password) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
         //验证otp是否正确
-        String otpCodeString = String.valueOf(this.httpServletRequest.getSession().getAttribute("telphone"));
-        if (StringUtils.equals(otpCodeString,otpCode)) {
+        String otpCodeString = httpServletRequest.getSession().getAttribute(telphone) + "";
+        if (!StringUtils.equals(otpCodeString,otpCode)) {
             throw new BusinessException(EnumBusinessErr.PARAMETER_VALIDATION_ERROR,"短信验证码不正确");
         }
 
@@ -48,7 +50,7 @@ public class UserController extends BaseController {
         userModel.setName(name);
         userModel.setAge(age);
         userModel.setTelephone(telphone);
-        userModel.setEncryptpassword(MD5Encoder.encode(password.getBytes()));
+        userModel.setEncryptpassword(this.EncodByMd5(password));
         userModel.setGender(gender);
         userModel.setRegisterMod("byphone");
         userModel.setThirdPartyId("0");
@@ -59,7 +61,7 @@ public class UserController extends BaseController {
     }
 
 
-    @PostMapping(value = "/getotp",consumes = {CONTEXT_TYPE_FORWORDS})
+    @PostMapping(value = "/getotp" , consumes = CONTEXT_TYPE_FORWORDS)
     @ResponseBody
     public CommonReturnType getOtp(@RequestParam(name="telphone") String telphone) {
         Random rand = new Random();
@@ -69,6 +71,27 @@ public class UserController extends BaseController {
 
         System.out.println("telphone: " + telphone + " & otp: " + otpCode);
         httpServletRequest.getSession().setAttribute(telphone,otpCode);
+
+        return CommonReturnType.create(null);
+    }
+
+    @PostMapping(value = "/login" , consumes = CONTEXT_TYPE_FORWORDS)
+    @ResponseBody
+    public CommonReturnType login(@RequestParam(name="telphone") String telphone,
+                                  @RequestParam(name="password") String password) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
+
+        //参数校验
+        if (org.apache.commons.lang3.StringUtils.isEmpty(telphone)
+                || org.apache.commons.lang3.StringUtils.isEmpty(password)) {
+            throw new BusinessException(EnumBusinessErr.PARAMETER_VALIDATION_ERROR,"参数不能为空");
+        }
+
+        String encryptedPassword = this.EncodByMd5(password);
+        UserModel userModel = userService.validateLogin(telphone, encryptedPassword);
+
+        //将用户改成已登入状态
+        this.httpServletRequest.getSession().setAttribute("LOG_IN",true);
+        this.httpServletRequest.getSession().setAttribute("LOG_USER",userModel);
 
         return CommonReturnType.create(null);
     }
