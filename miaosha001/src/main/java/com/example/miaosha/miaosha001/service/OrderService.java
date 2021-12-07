@@ -12,4 +12,11 @@ public interface OrderService {
      * @return
      */
     Integer createWrongOrder(StockOrderDo orderDo);
+
+    /**
+     * 创建悲观锁
+     * @param orderDo
+     * @return
+     */
+    Integer createPessimisticOrder(StockOrderDo orderDo);
 }
