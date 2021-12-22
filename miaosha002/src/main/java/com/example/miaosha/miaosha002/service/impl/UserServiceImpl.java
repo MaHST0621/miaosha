@@ -15,6 +15,7 @@ import com.example.miaosha.miaosha002.vo.LoginVo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,8 @@ public class UserServiceImpl implements UserService {
     UserInfoDao userInfoDao;
     @Autowired
     UserPasswordDao  userPasswordDao;
+    @Autowired
+    RedisTemplate redisTemplate;
 
     @Override
     public UserModel getUserById(Integer id) {
@@ -79,11 +82,37 @@ public class UserServiceImpl implements UserService {
         }
 
         UserModel userModel = ConverUtils.convertFromDataObject(userInfo,userPassword);
+
+//        /**
+//         * 第一版本  Cookie ——》 Session
+//         */
+//        String ticket = UUIDUtils.uuid();
+//        request.getSession().setAttribute(ticket,userModel);
+//        System.out.println(ticket);
+//        CookieUtils.setCookie(request,response,"userTicket",ticket);
+
+        /**
+         * 第二版本 redis ---》 token
+         */
         String ticket = UUIDUtils.uuid();
-        request.getSession().setAttribute("userTicket",ticket);
-        System.out.println(ticket);
+        //用户信息存入redis
+        redisTemplate.opsForValue().set("user: " + ticket,userModel);
+        //响应头加入 set-cookie
         CookieUtils.setCookie(request,response,"userTicket",ticket);
 
+        return userModel;
+    }
+
+    @Override
+    public UserModel getUserByToken(String userToken,HttpServletRequest request,HttpServletResponse response) {
+        if (StringUtils.isEmpty(userToken)) {
+            return null;
+        }
+        final UserModel userModel = (UserModel) redisTemplate.opsForValue().get("user: " + userToken);
+
+        if(userModel != null) {
+            CookieUtils.setCookie(request,response,"userTicket",userToken);
+        }
         return userModel;
     }
 

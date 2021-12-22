@@ -29,7 +29,7 @@ import java.util.Random;
 @RequestMapping("/user")
 @CrossOrigin(origins = "*",allowCredentials = "true")
 @Slf4j
-public class UserController extends BaseController{
+public class UserController {
     @Autowired
     UserService userService;
 

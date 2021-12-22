@@ -8,11 +8,24 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public interface UserService {
+    /**
+     *
+     * @param id
+     * @return
+     */
     UserModel getUserById(Integer id);
+
+    /**
+     *
+     * @param userModel
+     * @throws BusinessException
+     */
     void rigister(UserModel userModel) throws BusinessException;
 
     /**
      * @throws BusinessException
      */
     UserModel validateLogin(LoginVo loginVo, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws BusinessException;
+
+    UserModel getUserByToken(String userToken,HttpServletRequest httpServletRequest,HttpServletResponse httpServletResponse);
 }

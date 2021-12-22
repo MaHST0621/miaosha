@@ -1,6 +1,9 @@
 package com.example.miaosha.miaosha002.model;
 
-public class UserModel {
+import java.io.Serializable;
+
+//需要序列化存入Redis
+public class UserModel implements Serializable {
     /**
      * 用户id
      */
