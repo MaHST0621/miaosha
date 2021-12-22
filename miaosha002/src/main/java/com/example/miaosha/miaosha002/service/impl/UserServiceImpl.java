@@ -18,6 +18,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -79,7 +80,7 @@ public class UserServiceImpl implements UserService {
 
         UserModel userModel = ConverUtils.convertFromDataObject(userInfo,userPassword);
         String ticket = UUIDUtils.uuid();
-        request.getSession().setAttribute(ticket,userModel);
+        request.getSession().setAttribute("userTicket",ticket);
         System.out.println(ticket);
         CookieUtils.setCookie(request,response,"userTicket",ticket);
 

@@ -12,7 +12,7 @@ import javax.servlet.http.HttpSession;
 @RestController
 @RequestMapping("/goods")
 //ajax 跨域注解
-@CrossOrigin()
+@CrossOrigin(origins = "*",allowCredentials = "true")
 @Slf4j
 public class GoodsController {
     @RequestMapping(value = "/test",method = RequestMethod.GET)

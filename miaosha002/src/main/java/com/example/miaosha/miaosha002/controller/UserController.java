@@ -27,10 +27,9 @@ import java.util.Random;
 
 @RestController
 @RequestMapping("/user")
-//@CrossOrigin(allowCredentials = "true",allowedHeaders = "*")
-@CrossOrigin()
+@CrossOrigin(origins = "*",allowCredentials = "true")
 @Slf4j
-public class UserController{
+public class UserController extends BaseController{
     @Autowired
     UserService userService;
 
@@ -39,6 +38,7 @@ public class UserController{
     public CommonReturnType register(@Valid RegisterVo registerVo,HttpServletRequest httpServletRequest,HttpServletResponse httpServletResponse) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
         //验证otp是否正确
         String otpCodeString = httpServletRequest.getSession().getAttribute(registerVo.getTelephone()) + "";
+        System.out.println(otpCodeString);
         if (!StringUtils.equals(otpCodeString, registerVo.getOtpcode())) {
             throw new BusinessException(EnumBusinessErr.PARAMETER_VALIDATION_ERROR,"短信验证码不正确");
         }
@@ -73,7 +73,7 @@ public class UserController{
     @PostMapping(value = "/login")
     @ResponseBody
     public CommonReturnType login(LoginVo loginVo,HttpServletRequest httpServletRequest,HttpServletResponse httpServletResponse) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
-
+        System.out.println(loginVo.toString());
         loginVo.setPassword(MD5Util.inputPasswordToDbPassWord(loginVo.getPassword(),"1a2b3c4d"));
         UserModel userModel = userService.validateLogin(loginVo,httpServletRequest,httpServletResponse);
 
