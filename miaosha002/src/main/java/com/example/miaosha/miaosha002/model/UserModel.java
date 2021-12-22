@@ -20,7 +20,7 @@ public class UserModel {
     /**
      * 用户手机号
      */
-    private String telephone;
+    private String telphone;
     /**
      * 注册类型: byphone;bywechat;byalipay
      */
@@ -64,12 +64,12 @@ public class UserModel {
         this.age = age;
     }
 
-    public String getTelephone() {
-        return telephone;
+    public String getTelphone() {
+        return telphone;
     }
 
-    public void setTelephone(String telephone) {
-        this.telephone = telephone;
+    public void setTelphone(String telphone) {
+        this.telphone = telphone;
     }
 
     public String getRegisterMod() {

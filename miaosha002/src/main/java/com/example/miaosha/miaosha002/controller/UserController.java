@@ -3,67 +3,62 @@ package com.example.miaosha.miaosha002.controller;
 import com.alibaba.druid.util.StringUtils;
 import com.example.miaosha.miaosha002.error.BusinessException;
 import com.example.miaosha.miaosha002.error.EnumBusinessErr;
-import com.example.miaosha.miaosha002.error.MyExceptionHandler;
 import com.example.miaosha.miaosha002.model.UserModel;
 import com.example.miaosha.miaosha002.response.CommonReturnType;
 import com.example.miaosha.miaosha002.service.UserService;
+import com.example.miaosha.miaosha002.util.ConverUtils;
+import com.example.miaosha.miaosha002.util.MD5Util;
+import com.example.miaosha.miaosha002.validator.IsMobile;
+import com.example.miaosha.miaosha002.vo.LoginVo;
+import com.example.miaosha.miaosha002.vo.RegisterVo;
 import com.example.miaosha.miaosha002.vo.UserVo;
-import org.apache.tomcat.util.security.MD5Encoder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.Random;
 
 
 @RestController
 @RequestMapping("/user")
-@CrossOrigin(allowCredentials = "true",allowedHeaders = "*")
-public class UserController extends BaseController  {
-
+//@CrossOrigin(allowCredentials = "true",allowedHeaders = "*")
+@CrossOrigin()
+@Slf4j
+public class UserController{
     @Autowired
     UserService userService;
-    @Autowired
-    HttpServletRequest httpServletRequest;
 
-    @PostMapping(value = "/rigist" , consumes = CONTEXT_TYPE_FORWORDS)
+    @PostMapping(value = "/rigist")
     @ResponseBody
-    public CommonReturnType register(@RequestParam(name="telphone") String telphone,
-                                     @RequestParam(name="name") String name,
-                                     @RequestParam(name="age") Integer age,
-                                     @RequestParam(name="gender") Integer gender,
-                                     @RequestParam(name="otpcode") String otpCode,
-                                     @RequestParam(name="password") String password) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
+    public CommonReturnType register(@Valid RegisterVo registerVo,HttpServletRequest httpServletRequest,HttpServletResponse httpServletResponse) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
         //验证otp是否正确
-        String otpCodeString = httpServletRequest.getSession().getAttribute(telphone) + "";
-        if (!StringUtils.equals(otpCodeString,otpCode)) {
+        String otpCodeString = httpServletRequest.getSession().getAttribute(registerVo.getTelephone()) + "";
+        if (!StringUtils.equals(otpCodeString, registerVo.getOtpcode())) {
             throw new BusinessException(EnumBusinessErr.PARAMETER_VALIDATION_ERROR,"短信验证码不正确");
         }
 
         //注册流程
         UserModel userModel = new UserModel();
-        userModel.setName(name);
-        userModel.setAge(age);
-        userModel.setTelephone(telphone);
-        userModel.setEncryptpassword(this.EncodByMd5(password));
-        userModel.setGender(gender);
+        BeanUtils.copyProperties(registerVo,userModel);
         userModel.setRegisterMod("byphone");
-        userModel.setThirdPartyId("0");
+        userModel.setThirdPartyId("2");
+        String Encryptpassword = MD5Util.inputPasswordToDbPassWord(registerVo.getPassword(),"1a2b3c4d");
+        userModel.setEncryptpassword(Encryptpassword);
 
         userService.rigister(userModel);
-
         return CommonReturnType.create(null);
     }
 
 
-    @PostMapping(value = "/getotp" , consumes = CONTEXT_TYPE_FORWORDS)
+    @PostMapping(value = "/getotp")
     @ResponseBody
-    public CommonReturnType getOtp(@RequestParam(name="telphone") String telphone) {
+    public CommonReturnType getOtp(@IsMobile String telphone,HttpServletRequest httpServletRequest) {
         Random rand = new Random();
         int randomInt = rand.nextInt(9999);
         randomInt += 1000;
@@ -75,25 +70,14 @@ public class UserController extends BaseController  {
         return CommonReturnType.create(null);
     }
 
-    @PostMapping(value = "/login" , consumes = CONTEXT_TYPE_FORWORDS)
+    @PostMapping(value = "/login")
     @ResponseBody
-    public CommonReturnType login(@RequestParam(name="telphone") String telphone,
-                                  @RequestParam(name="password") String password) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
+    public CommonReturnType login(LoginVo loginVo,HttpServletRequest httpServletRequest,HttpServletResponse httpServletResponse) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
 
-        //参数校验
-        if (org.apache.commons.lang3.StringUtils.isEmpty(telphone)
-                || org.apache.commons.lang3.StringUtils.isEmpty(password)) {
-            throw new BusinessException(EnumBusinessErr.PARAMETER_VALIDATION_ERROR,"参数不能为空");
-        }
+        loginVo.setPassword(MD5Util.inputPasswordToDbPassWord(loginVo.getPassword(),"1a2b3c4d"));
+        UserModel userModel = userService.validateLogin(loginVo,httpServletRequest,httpServletResponse);
 
-        String encryptedPassword = this.EncodByMd5(password);
-        UserModel userModel = userService.validateLogin(telphone, encryptedPassword);
-
-        //将用户改成已登入状态
-        this.httpServletRequest.getSession().setAttribute("LOG_IN",true);
-        this.httpServletRequest.getSession().setAttribute("LOG_USER",userModel);
-
-        return CommonReturnType.create(null);
+        return CommonReturnType.create(userModel);
     }
 
 
@@ -102,21 +86,11 @@ public class UserController extends BaseController  {
     public CommonReturnType getUser(@RequestParam(name="id") Integer id) throws BusinessException {
         UserModel userModel = userService.getUserById(id);
         if (userModel == null) {
-            BusinessException b =  new BusinessException(EnumBusinessErr.USER_NOT_EXIST);
-            throw b;
+            throw new BusinessException(EnumBusinessErr.USER_NOT_EXIST);
         }
-
-        UserVo userVo = convertFromUserModel(userModel);
+        UserVo userVo = ConverUtils.convertFromUserModeltoUserVo(userModel);
         return CommonReturnType.create(userVo);
     }
 
-    private UserVo convertFromUserModel(UserModel userModel) {
-        if (userModel == null) {
-            return null;
-        }
-        final UserVo userVo = new UserVo();
-        BeanUtils.copyProperties(userModel,userVo);
-        return userVo;
-    }
 
 }

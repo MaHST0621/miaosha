@@ -8,12 +8,18 @@ import com.example.miaosha.miaosha002.error.BusinessException;
 import com.example.miaosha.miaosha002.error.EnumBusinessErr;
 import com.example.miaosha.miaosha002.model.UserModel;
 import com.example.miaosha.miaosha002.service.UserService;
+import com.example.miaosha.miaosha002.util.ConverUtils;
+import com.example.miaosha.miaosha002.util.CookieUtils;
+import com.example.miaosha.miaosha002.util.UUIDUtils;
+import com.example.miaosha.miaosha002.vo.LoginVo;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -30,7 +36,7 @@ public class UserServiceImpl implements UserService {
             return null;
         }
         UserPassword userPassword = userPasswordDao.queryByUserId(id);
-        return convertFromDataObject(userInfo,userPassword);
+        return ConverUtils.convertFromDataObject(userInfo,userPassword);
     }
 
     @Override
@@ -43,60 +49,41 @@ public class UserServiceImpl implements UserService {
         if (!StringUtils.isNotEmpty(userModel.getName())
                 || userModel.getAge() == null
                 || userModel.getGender() == null
-                || !StringUtils.isNotEmpty(userModel.getTelephone())) {
+                || !StringUtils.isNotEmpty(userModel.getTelphone())) {
             throw new BusinessException(EnumBusinessErr.PARAMETER_VALIDATION_ERROR,"用户基本信息务必要填");
         }
 
-        UserInfo userInfo = convertFromUserModel(userModel);
+        UserInfo userInfo = ConverUtils.convertFromUserModel(userModel);
         try {
             userInfoDao.insert(userInfo);
         }catch (DuplicateKeyException exception) {
             throw new BusinessException(EnumBusinessErr.PARAMETER_VALIDATION_ERROR,"手机号重复被注册");
         }
         userModel.setId(userInfo.getId());
-        UserPassword userPassword = convertToUserPassword(userModel);
+        UserPassword userPassword = ConverUtils.convertToUserPassword(userModel);
         userPasswordDao.insert(userPassword);
     }
 
     @Override
-    public UserModel validateLogin(String telphone, String encrptPassword) throws BusinessException {
-        UserInfo userInfo = userInfoDao.queryByTelphone(telphone);
+    public UserModel validateLogin(LoginVo loginVo, HttpServletRequest request, HttpServletResponse response) throws BusinessException {
+        UserInfo userInfo = userInfoDao.queryByTelphone(loginVo.getTelphone());
         if (userInfo == null) {
             throw new BusinessException(EnumBusinessErr.USER_LOGIN_ERROR);
         }
         UserPassword userPassword = userPasswordDao.queryByUserId(userInfo.getId());
 
         //验证密码的正确性
-        if (!StringUtils.equals(encrptPassword,userPassword.getEncrptPassword())) {
+        if (!StringUtils.equals(loginVo.getPassword(),userPassword.getEncrptPassword())) {
             throw new BusinessException(EnumBusinessErr.USER_LOGIN_ERROR);
         }
 
-        return convertFromDataObject(userInfo,userPassword);
-    }
+        UserModel userModel = ConverUtils.convertFromDataObject(userInfo,userPassword);
+        String ticket = UUIDUtils.uuid();
+        request.getSession().setAttribute(ticket,userModel);
+        System.out.println(ticket);
+        CookieUtils.setCookie(request,response,"userTicket",ticket);
 
-    private UserPassword convertToUserPassword(UserModel userModel) {
-        if (userModel == null) {
-            return null;
-        }
-        UserPassword userPassword = new UserPassword();
-        userPassword.setEncrptPassword(userModel.getEncryptpassword());
-        userPassword.setUserId(userModel.getId());
-        return userPassword;
-    }
-
-    private  UserInfo convertFromUserModel(UserModel userModel) {
-        if (userModel == null) {
-            return null;
-        }
-        UserInfo userInfo = new UserInfo();
-        BeanUtils.copyProperties(userModel,userInfo);
-        return userInfo;
-    }
-
-    private UserModel convertFromDataObject(UserInfo userInfo, UserPassword userPassword) {
-        final UserModel userModel = new UserModel();
-        BeanUtils.copyProperties(userInfo,userModel);
-        userModel.setEncryptpassword(userPassword.getEncrptPassword());
         return userModel;
     }
+
 }
